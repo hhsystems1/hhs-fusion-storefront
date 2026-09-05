@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { commerceDb } from '@/lib/commerce/db';
 import { CheckCircle2, Package, ArrowRight } from 'lucide-react';
