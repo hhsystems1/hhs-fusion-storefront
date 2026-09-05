@@ -1,5 +1,5 @@
 import { supabase } from '../supabase/client';
-import { Product, Category } from '../supabase/types';
+import { Product, Category } from './types';
 
 export const commerceDb = {
   products: {
@@ -47,11 +47,13 @@ export const commerceDb = {
       if (error || !data) return null;
       return data.id;
     },
+
     async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
       const { data, error } = await supabase
         .from('products')
         .update(updates)
         .eq('id', id)
+        .select()
         .single();
 
       if (error) throw new Error(`Failed to update product: ${error.message}`);
@@ -62,12 +64,11 @@ export const commerceDb = {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name');
 
-      if (error) throw new Error(`Failed to fetch products: ${error.message}`);
+      if (error) throw new Error(`Failed to fetch all products: ${error.message}`);
       return data as Product[];
     },
-
   },
 
   categories: {
@@ -94,24 +95,36 @@ export const commerceDb = {
   },
 
   orders: {
+    async getRecent(limit = 10) {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*, products(*))')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw new Error(`Failed to fetch orders: ${error.message}`);
+      return data;
+    },
+
+    async getById(id: string) {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*, products(*))')
+        .eq('id', id)
+        .single();
+
+      if (error) throw new Error(`Order not found: ${error.message}`);
+      return data;
+    },
+
     async getByHash(hash: string) {
       const { data, error } = await supabase
         .from('orders')
-        .select(`
-          *,
-          order_items (
-            quantity,
-            unit_price,
-            products (
-              name,
-              image_url
-            )
-          )
-        `)
+        .select('*, order_items(*, products(*))')
         .eq('secure_hash', hash)
         .single();
 
-      if (error) return null;
+      if (error) throw new Error(`Invalid order hash: ${error.message}`);
       return data;
     },
 
@@ -122,8 +135,29 @@ export const commerceDb = {
         .eq('stripe_session_id', sessionId)
         .single();
 
-      if (error) return null;
+      if (error) throw new Error(`Order not found for session: ${error.message}`);
       return data;
-    }
-  }
+    },
+
+    async getStats() {
+      const { data: revenue, error: revErr } = await supabase
+        .from('orders')
+        .select('total_amount');
+      
+      const { data: orders, error: ordErr } = await supabase
+        .from('orders')
+        .select('id');
+
+      if (revErr || ordErr) throw new Error('Failed to fetch stats');
+
+      const totalRevenue = revenue?.reduce((acc, curr) => acc + Number(curr.total_amount), 0) || 0;
+      const totalOrders = orders?.length || 0;
+
+      return {
+        totalRevenue,
+        totalOrders,
+        avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      };
+    },
+  },
 };

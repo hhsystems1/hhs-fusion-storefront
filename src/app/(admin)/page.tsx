@@ -1,72 +1,65 @@
 import React from 'react';
-import { 
-  ShoppingBag, 
-  Users, 
-  Package, 
-  TrendingUp, 
-  ArrowUpRight 
-} from 'lucide-react';
+import { commerceDb } from '@/lib/commerce/db';
 
-export default function AdminOverview() {
-  const stats = [
-    { name: 'Total Revenue', value: '$0.00', change: '+0%', icon: TrendingUp, color: 'text-green-600' },
-    { name: 'Total Orders', value: '0', change: '+0%', icon: ShoppingBag, color: 'text-blue-600' },
-    { name: 'Active Customers', value: '0', change: '+0%', icon: Users, color: 'text-purple-600' },
-    { name: 'Active Products', value: '0', change: '+0%', icon: Package, color: 'text-orange-600' },
-  ];
+export default async function AdminOverview() {
+  const stats = await commerceDb.orders.getStats();
+  const recentOrders = await commerceDb.orders.getRecent(5);
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-500">Welcome back to the HHS Storefront administration.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-2 rounded-lg bg-gray-50 ${stat.color}`}>
-                <stat.icon size={24} />
-              </div>
-              <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                {stat.change} <ArrowUpRight size={12} className="ml-1" />
-              </span>
-            </div>
-            <p className="text-sm text-gray-500 font-medium">{stat.name}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <p className="text-sm text-gray-600">New order received #{1000 + i}</p>
-                </div>
-                <span className="text-xs text-gray-400">2h ago</span>
-              </div>
-            ))}
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 rounded-2xl bg-white border border-hhs-slate-200 shadow-sm">
+          <p className="text-sm font-medium text-hhs-slate-500 uppercase tracking-wider">Total Revenue</p>
+          <p className="text-3xl font-bold text-hhs-slate-900 mt-2">
+            ${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
         </div>
+        <div className="p-6 rounded-2xl bg-white border border-hhs-slate-200 shadow-sm">
+          <p className="text-sm font-medium text-hhs-slate-500 uppercase tracking-wider">Total Orders</p>
+          <p className="text-3xl font-bold text-hhs-slate-900 mt-2">
+            {stats.totalOrders}
+          </p>
+        </div>
+        <div className="p-6 rounded-2xl bg-white border border-hhs-slate-200 shadow-sm">
+          <p className="text-sm font-medium text-hhs-slate-500 uppercase tracking-wider">Avg Order Value</p>
+          <p className="text-3xl font-bold text-hhs-slate-900 mt-2">
+            ${stats.avgOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-600">Supabase Connection</span>
-              <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded">Healthy</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-600">Stripe Webhooks</span>
-              <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded">Active</span>
-            </div>
-          </div>
+      <div className="bg-white border border-hhs-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-hhs-slate-200 flex items-center justify-between">
+          <h3 className="font-bold text-hhs-slate-900">Recent Orders</h3>
+          <a href="/admin/orders" className="text-sm text-hhs-blue hover:underline">View All</a>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-hhs-slate-50 text-hhs-slate-500 font-medium">
+              <tr>
+                <th className="px-6 py-3">Order ID</th>
+                <th className="px-6 py-3">Amount</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-hhs-slate-100">
+              {recentOrders.map((order: any) => (
+                <tr key={order.id} className="hover:bg-hhs-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-xs">{order.id.slice(0, 8)}...</td>
+                  <td className="px-6 py-4 font-semibold">${Number(order.total_amount).toFixed(2)}</td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700">
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-hhs-slate-500">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
