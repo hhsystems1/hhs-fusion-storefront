@@ -54,10 +54,23 @@ CREATE TABLE orders (
   total_amount DECIMAL(12, 2) NOT NULL,
   currency TEXT NOT NULL DEFAULT 'usd',
   status TEXT NOT NULL DEFAULT 'pending',
+  secure_hash TEXT UNIQUE,
   payment_intent_id TEXT,
   metadata JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Create fulfillment_logs table
+CREATE TABLE fulfillment_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
+  request_payload JSONB NOT NULL,
+  response_payload JSONB,
+  status TEXT NOT NULL, -- 'pending', 'success', 'failed'
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(order_id) -- Ensures one fulfillment record per order for strict idempotency
 );
 
 -- Create order_items table

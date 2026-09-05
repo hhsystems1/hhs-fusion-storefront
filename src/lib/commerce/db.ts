@@ -1,5 +1,5 @@
-import { supabase } from './client';
-import { Product, Category } from './types';
+import { supabase } from '../supabase/client';
+import { Product, Category } from '../supabase/types';
 
 export const commerceDb = {
   products: {
@@ -47,6 +47,27 @@ export const commerceDb = {
       if (error || !data) return null;
       return data.id;
     },
+    async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+      const { data, error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', id)
+        .single();
+
+      if (error) throw new Error(`Failed to update product: ${error.message}`);
+      return data as Product;
+    },
+
+    async getAllProducts(): Promise<Product[]> {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw new Error(`Failed to fetch products: ${error.message}`);
+      return data as Product[];
+    },
+
   },
 
   categories: {
@@ -71,4 +92,38 @@ export const commerceDb = {
       return data as Category;
     },
   },
+
+  orders: {
+    async getByHash(hash: string) {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            quantity,
+            unit_price,
+            products (
+              name,
+              image_url
+            )
+          )
+        `)
+        .eq('secure_hash', hash)
+        .single();
+
+      if (error) return null;
+      return data;
+    },
+
+    async getBySessionId(sessionId: string) {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('stripe_session_id', sessionId)
+        .single();
+
+      if (error) return null;
+      return data;
+    }
+  }
 };

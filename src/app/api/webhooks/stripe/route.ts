@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { env } from '@/lib/validation/env';
 import { supabaseAdmin } from '@/lib/supabase/client';
+import { triggerFulfillment } from '@/lib/commerce/fulfillment';
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2026-08-26.dahlia',
@@ -67,6 +69,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const lineItems = sessionWithLineItems.line_items?.data || [];
 
   // 3. Record the Order
+  const secureHash = crypto.randomBytes(32).toString('hex');
+
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
     .insert({
@@ -76,6 +80,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       currency: currency || 'usd',
       payment_intent_id: payment_intent as string,
       status: 'paid',
+      secure_hash: secureHash,
       metadata: metadata,
     })
     .select()
@@ -104,7 +109,17 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     throw new Error(`Failed to create order items: ${itemsError.message}`);
   }
 
-  // 5. Trigger Fulfillment Request (Logged for now)
-  console.log(`🚀 [FULFILLMENT] Triggered fulfillment request for Order ID: ${order.id} (Stripe Session: ${stripeSessionId})`);
-  console.log(`📦 Items to fulfill:`, orderItemsToInsert);
+  // 5. Trigger Fulfillment Request
+  try {
+    const fulfillmentResult = await triggerFulfillment(order.id);
+    if (!fulfillmentResult.success) {
+      console.error(`⚠️ Fulfillment trigger failed for Order ${order.id}: ${fulfillmentResult.message}`);
+    } else {
+      console.log(`✅ [FULFILLMENT] ${fulfillmentResult.message} for Order ID: ${order.id}`);
+    }
+  } catch (fulfillmentError: any) {
+    console.error(`❌ Critical error during fulfillment trigger for Order ${order.id}: ${fulfillmentError.message}`);
+    // We don't throw here because the order is already paid and recorded; 
+    // we want the webhook to return 200 to avoid Stripe retries of the whole session logic.
+  }
 }

@@ -4,7 +4,7 @@ import { env } from '@/lib/validation/env';
 import { useCart } from '@/lib/commerce/cart-store'; // This won't work on server, need to pass items in body
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2026-08-26.dahlia' as any,
 });
 
 export async function POST(req: Request) {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items,
+      line_items: lineItems,
       mode: 'payment',
       success_url: `${env.NEXT_PUBLIC_SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${env.NEXT_PUBLIC_SITE_URL}/cart`,
