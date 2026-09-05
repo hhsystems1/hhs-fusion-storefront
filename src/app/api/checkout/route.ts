@@ -23,6 +23,9 @@ export async function POST(req: Request) {
           name: item.name,
           description: item.short_description || item.description,
           images: [item.image_url],
+          metadata: {
+            productId: item.id, // Link back to Supabase product ID
+          },
         },
         unit_amount: Math.round(item.price * 100),
       },

@@ -45,3 +45,39 @@ ON products FOR SELECT USING (is_active = true);
 CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_products_slug ON products(slug);
 CREATE INDEX idx_categories_slug ON categories(slug);
+
+-- Create orders table
+CREATE TABLE orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stripe_session_id TEXT NOT NULL UNIQUE,
+  visitor_id TEXT,
+  total_amount DECIMAL(12, 2) NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'usd',
+  status TEXT NOT NULL DEFAULT 'pending',
+  payment_intent_id TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Create order_items table
+CREATE TABLE order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  quantity INTEGER NOT NULL,
+  unit_price DECIMAL(12, 2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS for orders
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+
+-- Policies for orders
+CREATE POLICY \"Orders are viewable by admin\" ON orders FOR ALL USING (false); 
+CREATE POLICY \"Order items are viewable by admin\" ON order_items FOR ALL USING (false);
+
+CREATE INDEX idx_orders_stripe_session_id ON orders(stripe_session_id);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+
