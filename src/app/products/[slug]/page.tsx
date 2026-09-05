@@ -27,7 +27,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
-            {product.gallery_urls?.map((url, idx) => (
+            {product.gallery_urls?.map((url: string, idx: number) => (
               <div key={idx} className="aspect-square overflow-hidden rounded-lg bg-hhs-slate-100 border border-hhs-slate-200">
                 <img src={url} alt={`${product.name} ${idx + 1}`} className="h-full w-full object-cover" />
               </div>

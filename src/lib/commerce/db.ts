@@ -1,5 +1,5 @@
 import { supabase } from '../supabase/client';
-import { Product, Category } from './types';
+import { Product, Category } from '../supabase/types';
 
 export const commerceDb = {
   products: {
