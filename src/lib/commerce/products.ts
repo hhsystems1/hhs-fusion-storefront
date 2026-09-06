@@ -17,6 +17,7 @@ export interface ShowcaseProduct {
   paymentLink: string;
   icon: LucideIcon;
   gradient: string;
+  image?: string | null;
   glow: string;
   features: string[];
   faqs: Faq[];

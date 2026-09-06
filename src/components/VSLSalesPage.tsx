@@ -90,8 +90,12 @@ export const VSLSalesPage = ({ product }: VSLSalesPageProps) => {
             {product.category}
           </span>
 
-          <div className="mt-8 flex h-32 w-32 items-center justify-center rounded-full border border-white/40 bg-white/20 shadow-2xl shadow-black/30 backdrop-blur-md sm:h-36 sm:w-36">
-            <Icon className="h-16 w-16 sm:h-20 sm:w-20" strokeWidth={1.5} />
+          <div className="mt-8 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-white/40 bg-white/20 shadow-2xl shadow-black/30 backdrop-blur-md sm:h-36 sm:w-36">
+            {product.image ? (
+              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+            ) : (
+              <Icon className="h-16 w-16 sm:h-20 sm:w-20" strokeWidth={1.5} />
+            )}
           </div>
 
           <h1 className="mt-8 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">

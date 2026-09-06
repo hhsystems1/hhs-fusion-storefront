@@ -1,6 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CartProvider } from '@/components/CartController';
 import CartNavButton from '@/components/CartNavButton';
 
@@ -28,10 +29,10 @@ export default function RootLayout({
                 </span>
               </div>
               <div className="hidden md:flex items-center gap-8 text-sm font-medium text-hhs-slate-900">
-                <a href="/" className="hover:text-hhs-blue transition-colors">Home</a>
-                <a href="/products" className="hover:text-hhs-blue transition-colors">Products</a>
-                <a href="/about" className="hover:text-hhs-blue transition-colors">About</a>
-                <a href="/support" className="hover:text-hhs-blue transition-colors">Support</a>
+                <Link href="/" className="hover:text-hhs-blue transition-colors">Home</Link>
+                <Link href="/colorado" className="hover:text-hhs-blue transition-colors">Colorado</Link>
+                <Link href="/texas" className="hover:text-hhs-blue transition-colors">Texas</Link>
+                <Link href="/products" className="hover:text-hhs-blue transition-colors">Products</Link>
                 <CartNavButton />
               </div>
             </nav>
@@ -55,9 +56,9 @@ export default function RootLayout({
                 <div>
                   <h4 className="font-semibold mb-4">Quick Links</h4>
                   <ul className="space-y-2 text-sm opacity-80">
-                    <li><a href="/products" className="hover:text-hhs-accent transition-colors">Products</a></li>
-                    <li><a href="/about" className="hover:text-hhs-accent transition-colors">About Us</a></li>
-                    <li><a href="/support" className="hover:text-hhs-accent transition-colors">Support</a></li>
+                    <li><Link href="/products" className="hover:text-hhs-accent transition-colors">Products</Link></li>
+                    <li><Link href="/colorado" className="hover:text-hhs-accent transition-colors">Shop Colorado</Link></li>
+                    <li><Link href="/texas" className="hover:text-hhs-accent transition-colors">Shop Texas</Link></li>
                   </ul>
                 </div>
                 <div>
