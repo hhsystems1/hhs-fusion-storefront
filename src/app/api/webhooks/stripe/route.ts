@@ -5,11 +5,18 @@ import { env } from '@/lib/validation/env';
 import { supabaseAdmin } from '@/lib/supabase/client';
 import { triggerFulfillment } from '@/lib/commerce/fulfillment';
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: '2026-08-26.dahlia',
-});
-
 export async function POST(req: Request) {
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: 'Stripe webhooks are not configured. Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET.' },
+      { status: 503 }
+    );
+  }
+
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-08-26.dahlia' as any,
+  });
+
   const body = await req.text();
   const sig = req.headers.get('stripe-signature');
 
@@ -22,7 +29,7 @@ export async function POST(req: Request) {
       env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err: any) {
-    console.error(`❌ Webhook signature verification failed: ${err.message}`);
+    console.error(`Webhook signature verification failed: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
@@ -30,9 +37,9 @@ export async function POST(req: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     
     try {
-      await handleCheckoutSessionCompleted(session);
+      await handleCheckoutSessionCompleted(stripe, session);
     } catch (error: any) {
-      console.error(`❌ Error handling checkout.session.completed: ${error.message}`);
+      console.error(`Error handling checkout.session.completed: ${error.message}`);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
   }
@@ -40,7 +47,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ received: true });
 }
 
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutSessionCompleted(stripe: Stripe, session: Stripe.Checkout.Session) {
   const { 
     id: stripeSessionId, 
     amount_total, 
@@ -49,7 +56,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     metadata 
   } = session;
 
-  // 1. Idempotency check: check if order already exists
+  if (!supabaseAdmin) {
+    throw new Error('Database not configured');
+  }
+
   const { data: existingOrder } = await supabaseAdmin
     .from('orders')
     .select('id')
@@ -57,18 +67,16 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     .single();
 
   if (existingOrder) {
-    console.log(`ℹ️ Order already recorded for session ${stripeSessionId}. Skipping.`);
+    console.log(`Order already recorded for session ${stripeSessionId}. Skipping.`);
     return;
   }
 
-  // 2. Fetch line items from Stripe to get product IDs
   const sessionWithLineItems = await stripe.checkout.sessions.retrieve(stripeSessionId, {
     expand: ['line_items.data.price.product'],
   });
 
   const lineItems = sessionWithLineItems.line_items?.data || [];
 
-  // 3. Record the Order
   const secureHash = crypto.randomBytes(32).toString('hex');
 
   const { data: order, error: orderError } = await supabaseAdmin
@@ -90,12 +98,11 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     throw new Error(`Failed to create order: ${orderError.message}`);
   }
 
-  // 4. Record Order Items
   const orderItemsToInsert = lineItems.map((item) => {
     const product = item.price?.product as Stripe.Product;
     return {
       order_id: order.id,
-      product_id: product?.metadata?.productId, // Linked via product metadata
+      product_id: product?.metadata?.productId,
       quantity: item.quantity,
       unit_price: (item.price?.unit_amount || 0) / 100,
     };
@@ -109,17 +116,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     throw new Error(`Failed to create order items: ${itemsError.message}`);
   }
 
-  // 5. Trigger Fulfillment Request
   try {
     const fulfillmentResult = await triggerFulfillment(order.id);
     if (!fulfillmentResult.success) {
-      console.error(`⚠️ Fulfillment trigger failed for Order ${order.id}: ${fulfillmentResult.message}`);
+      console.error(`Fulfillment trigger failed for Order ${order.id}: ${fulfillmentResult.message}`);
     } else {
-      console.log(`✅ [FULFILLMENT] ${fulfillmentResult.message} for Order ID: ${order.id}`);
+      console.log(`[FULFILLMENT] ${fulfillmentResult.message} for Order ID: ${order.id}`);
     }
   } catch (fulfillmentError: any) {
-    console.error(`❌ Critical error during fulfillment trigger for Order ${order.id}: ${fulfillmentError.message}`);
-    // We don't throw here because the order is already paid and recorded; 
-    // we want the webhook to return 200 to avoid Stripe retries of the whole session logic.
+    console.error(`Critical error during fulfillment trigger for Order ${order.id}: ${fulfillmentError.message}`);
   }
 }

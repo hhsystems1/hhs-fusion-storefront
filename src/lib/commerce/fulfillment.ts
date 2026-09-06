@@ -1,5 +1,4 @@
 import { supabaseAdmin } from '@/lib/supabase/client';
-import { env } from '@/lib/validation/env';
 
 /**
  * Triggers the fulfillment process for a given order.
@@ -9,6 +8,10 @@ import { env } from '@/lib/validation/env';
  * @returns {Promise<{ success: boolean; message: string }>}
  */
 export async function triggerFulfillment(orderId: string) {
+  if (!supabaseAdmin) {
+    return { success: false, message: 'Database not configured' };
+  }
+
   // 1. Idempotency Check: Attempt to create a 'pending' log entry.
   // The UNIQUE(order_id) constraint on fulfillment_logs ensures this only succeeds once.
   const { error: idempotencyError } = await supabaseAdmin
@@ -22,10 +25,10 @@ export async function triggerFulfillment(orderId: string) {
   if (idempotencyError) {
     // If the error is a unique constraint violation, fulfillment has already been triggered.
     if (idempotencyError.code === '23505') {
-      console.log(`ℹ️ Fulfillment already triggered for Order ID: ${orderId}. Skipping.`);
+      console.log(`Fulfillment already triggered for Order ID: ${orderId}. Skipping.`);
       return { success: true, message: 'Fulfillment already triggered.' };
     }
-    console.error(`❌ Database error during idempotency check for Order ${orderId}: ${idempotencyError.message}`);
+    console.error(`Database error during idempotency check for Order ${orderId}: ${idempotencyError.message}`);
     throw idempotencyError;
   }
 
@@ -112,14 +115,14 @@ export async function triggerFulfillment(orderId: string) {
  * Mock function to simulate a portal request when API keys are missing.
  */
 async function simulatePortalRequest(payload: any) {
-  console.log('🧪 [SIMULATION] Sending fulfillment request to Fusion Portal:', JSON.stringify(payload, null, 2));
+  console.log('[SIMULATION] Sending fulfillment request to Fusion Portal:', JSON.stringify(payload, null, 2));
   
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   // Update the log to simulate a successful API response
   const orderId = payload.orderId;
-  await supabaseAdmin
+  await supabaseAdmin!
     .from('fulfillment_logs')
     .update({
       status: 'success',

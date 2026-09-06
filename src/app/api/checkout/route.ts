@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { env } from '@/lib/validation/env';
-import { useCart } from '@/lib/commerce/cart-store'; // This won't work on server, need to pass items in body
-
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: '2026-08-26.dahlia' as any,
-});
 
 export async function POST(req: Request) {
+  if (!env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: 'Stripe is not configured. Add STRIPE_SECRET_KEY to your environment variables.' },
+      { status: 503 }
+    );
+  }
+
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-08-26.dahlia' as any,
+  });
+
   try {
     const { items, visitorId, sessionId } = await req.json();
 
@@ -15,7 +21,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    // Create Stripe line items
     const lineItems = items.map((item: any) => ({
       price_data: {
         currency: 'usd',
@@ -24,7 +29,7 @@ export async function POST(req: Request) {
           description: item.short_description || item.description,
           images: [item.image_url],
           metadata: {
-            productId: item.id, // Link back to Supabase product ID
+            productId: item.id,
           },
         },
         unit_amount: Math.round(item.price * 100),
