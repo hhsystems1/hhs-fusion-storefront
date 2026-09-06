@@ -1,14 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Product } from '@/lib/supabase/types';
 
-interface CartItem extends Product {
+export interface CartItemInput {
+  id: string;
+  slug: string;
+  name: string;
+  price: number | null;
+  maxQuantity?: number | null;
+}
+
+export interface CartItem extends CartItemInput {
   quantity: number;
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product) => void;
+  addItem: (product: CartItemInput) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -20,16 +27,17 @@ export const useCart = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      
+
       addItem: (product) => {
         const currentItems = get().items;
         const existingItem = currentItems.find((item) => item.id === product.id);
 
         if (existingItem) {
+          if (product.maxQuantity && existingItem.quantity >= product.maxQuantity) return;
           set({
             items: currentItems.map((item) =>
-              item.id === product.id 
-                ? { ...item, quantity: item.quantity + 1 } 
+              item.id === product.id
+                ? { ...item, quantity: item.quantity + 1 }
                 : item
             ),
           });
@@ -47,6 +55,10 @@ export const useCart = create<CartStore>()(
           get().removeItem(productId);
           return;
         }
+        const item = get().items.find((i) => i.id === productId);
+        if (item?.maxQuantity && quantity > item.maxQuantity) {
+          quantity = item.maxQuantity;
+        }
         set({
           items: get().items.map((item) =>
             item.id === productId ? { ...item, quantity } : item
@@ -57,7 +69,10 @@ export const useCart = create<CartStore>()(
       clearCart: () => set({ items: [] }),
 
       getTotalPrice: () => {
-        return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+        return get().items.reduce(
+          (total, item) => total + (item.price ?? 0) * item.quantity,
+          0
+        );
       },
 
       getTotalItems: () => {
@@ -66,6 +81,7 @@ export const useCart = create<CartStore>()(
     }),
     {
       name: 'hhs-cart-storage',
+      version: 2,
     }
   )
 );
