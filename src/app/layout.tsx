@@ -30,8 +30,6 @@ export default function RootLayout({
               </div>
               <div className="hidden md:flex items-center gap-8 text-sm font-medium text-hhs-slate-900">
                 <Link href="/" className="hover:text-hhs-blue transition-colors">Home</Link>
-                <Link href="/colorado" className="hover:text-hhs-blue transition-colors">Colorado</Link>
-                <Link href="/texas" className="hover:text-hhs-blue transition-colors">Texas</Link>
                 <Link href="/products" className="hover:text-hhs-blue transition-colors">Products</Link>
                 <CartNavButton />
               </div>
@@ -57,8 +55,8 @@ export default function RootLayout({
                   <h4 className="font-semibold mb-4">Quick Links</h4>
                   <ul className="space-y-2 text-sm opacity-80">
                     <li><Link href="/products" className="hover:text-hhs-accent transition-colors">Products</Link></li>
-                    <li><Link href="/colorado" className="hover:text-hhs-accent transition-colors">Shop Colorado</Link></li>
-                    <li><Link href="/texas" className="hover:text-hhs-accent transition-colors">Shop Texas</Link></li>
+                    <li><Link href="/products/cascade-spa" className="hover:text-hhs-accent transition-colors">Cascade Spa</Link></li>
+                    <li><Link href="/products/probe-refill" className="hover:text-hhs-accent transition-colors">Probe Refills</Link></li>
                   </ul>
                 </div>
                 <div>
