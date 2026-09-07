@@ -93,6 +93,9 @@ export default function CheckoutPage() {
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-3">
+          <p className="text-xs text-hhs-slate-400">
+            Sales tax, where applicable, is calculated by Stripe at checkout based on your location.
+          </p>
           <Link
             href="/products"
             className="inline-flex items-center gap-2 font-semibold text-hhs-blue hover:underline"

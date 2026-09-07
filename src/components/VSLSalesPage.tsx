@@ -241,6 +241,9 @@ export const VSLSalesPage = ({ product }: VSLSalesPageProps) => {
           <p className="mt-4 text-hhs-slate-600">
             Secure checkout through Stripe. No account required.
           </p>
+          <p className="mt-1 text-xs text-hhs-slate-400">
+            Sales tax, where applicable, is calculated by Stripe at checkout based on your location.
+          </p>
           <a
             href={product.paymentLink}
             target="_blank"

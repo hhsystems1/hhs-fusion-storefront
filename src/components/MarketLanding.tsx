@@ -70,6 +70,12 @@ export const MarketLanding = ({ market }: MarketLandingProps) => {
             <p className="mt-3 text-hhs-slate-600">
               {market.difference}
             </p>
+            <Link
+              href="/?noredirect=1"
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-hhs-slate-500 underline-offset-4 hover:text-hhs-blue hover:underline"
+            >
+              Not in {market.name}? View all markets <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {showcaseProducts.map((product) => (
