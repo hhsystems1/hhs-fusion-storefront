@@ -25,7 +25,7 @@ export default function RootLayout({
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xl font-bold text-hhs-blue tracking-tight">
-                  HELPING HANDS <span className="text-hhs-accent">SYSTEMS</span>
+                  HELPING HANDS <span className="text-hhs-accent-strong">SYSTEMS</span>
                 </span>
               </div>
               <div className="hidden md:flex items-center gap-8 text-sm font-medium text-hhs-slate-900">

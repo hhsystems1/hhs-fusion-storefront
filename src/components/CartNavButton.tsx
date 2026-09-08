@@ -18,7 +18,7 @@ const CartNavButton = () => {
       <ShoppingCart size={18} />
       <span className="font-medium">Cart</span>
       {itemCount > 0 && (
-        <span className="absolute -top-2 -right-2 bg-hhs-accent text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+        <span className="absolute -top-2 -right-2 bg-hhs-accent text-hhs-blue-dark text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
           {itemCount}
         </span>
       )}
